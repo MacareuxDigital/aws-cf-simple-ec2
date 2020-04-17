@@ -323,16 +323,17 @@
           "AssociatePublicIpAddress" : "false",
           "DeviceIndex" : "0",
           "SubnetId" : { "Ref" : "MyPublicSubnetA" }  } ],
+        "BlockDeviceMappings": {
+            "DeviceName"  : "/dev/xvda",
+            "Ebs"  :  {
+              "VolumeType"  :  "gp2",
+              "VolumeSize"  :  { "Ref" : "EC2EBSVolume" },
+              "DeleteOnTermination": true
+            }
+          }
         "KeyName" : { "Ref" : "SSHKeyName" },
         "ImageId" : { "Fn::FindInMap" : [ "AWSRegionArch2AMI", { "Ref" : "AWS::Region" },
                           { "Fn::FindInMap" : [ "AWSInstanceType2Arch", { "Ref" : "InstanceType" }, "Arch" ] } ] }
-        "BlockDeviceMappings": {
-          "DeviceName"  : "/dev/xvda",
-          "Ebs"  :  {
-            "VolumeType"  :  "gp2",
-            "VolumeSize"  :  { "Ref" : "EC2EBSVolume" },
-          }
-        }
       }
     },
     "IPAddress" : {

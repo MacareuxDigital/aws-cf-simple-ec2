@@ -1,0 +1,14 @@
+# ignore system files
+.DS_Store
+.idea
+.nova
+.vscode
+thumbs.db
+__MACOSX
+._*
+.*swp
+.*swo
+*.iml
+__IDE_SYMBOLS__.php
+.phpstorm.meta.php
+Icon?

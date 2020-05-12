@@ -225,7 +225,7 @@
       "eu-west-3"        : {"PV64" : "NOT_SUPPORTED", "HVM64" : "ami-0ebb3a801d5fb8b9b", "HVMG2" : "NOT_SUPPORTED"},
       "eu-central-1"     : {"PV64" : "NOT_SUPPORTED", "HVM64" : "ami-0ebe657bc328d4e82", "HVMG2" : "NOT_SUPPORTED"},
       "eu-north-1"       : {"PV64" : "NOT_SUPPORTED", "HVM64" : "ami-1fb13961", "HVMG2" : "NOT_SUPPORTED"},
-      "ap-northeast-1"   : {"PV64" : "NOT_SUPPORTED", "HVM64" : "ami-00d101850e971728d", "HVMG2" : "NOT_SUPPORTED"},
+      "ap-northeast-1"   : {"PV64" : "NOT_SUPPORTED", "HVM64" : "ami-0f310fced6141e627", "HVMG2" : "NOT_SUPPORTED"},
       "ap-northeast-2"   : {"PV64" : "NOT_SUPPORTED", "HVM64" : "ami-08ab3f7e72215fe91", "HVMG2" : "NOT_SUPPORTED"},
       "ap-southeast-1"   : {"PV64" : "NOT_SUPPORTED", "HVM64" : "ami-0b5a47f8865280111", "HVMG2" : "NOT_SUPPORTED"},
       "ap-southeast-2"   : {"PV64" : "NOT_SUPPORTED", "HVM64" : "ami-0b5a47f8865280111", "HVMG2" : "NOT_SUPPORTED"},

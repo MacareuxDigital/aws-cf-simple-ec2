@@ -1,0 +1,1342 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: This CloudFormation template for concrete5.
+
+Mappings:
+  # S3 Bucket policy principal for ELB Logs
+  # see https://docs.aws.amazon.com/elasticloadbalancing/latest/classic/enable-access-logs.html#attach-bucket-policy
+  ELBAccountID:
+    us-east-1:      { ELBAccountARN: "arn:aws:iam::127311923021:root" }
+    us-east-2:      { ELBAccountARN: "arn:aws:iam::033677994240:root" }
+    us-west-1:      { ELBAccountARN: "arn:aws:iam::027434742980:root" }
+    us-west-2:      { ELBAccountARN: "arn:aws:iam::797873946194:root" }
+    ca-central-1:   { ELBAccountARN: "arn:aws:iam::985666609251:root" }
+    eu-central-1:   { ELBAccountARN: "arn:aws:iam::054676820928:root" }
+    eu-west-1:      { ELBAccountARN: "arn:aws:iam::156460612806:root" }
+    eu-west-2:      { ELBAccountARN: "arn:aws:iam::652711504416:root" }
+    eu-west-3:      { ELBAccountARN: "arn:aws:iam::009996457667:root" }
+    ap-northeast-1: { ELBAccountARN: "arn:aws:iam::582318560864:root" }
+    ap-northeast-2: { ELBAccountARN: "arn:aws:iam::600734575887:root" }
+    ap-northeast-3: { ELBAccountARN: "arn:aws:iam::383597477331:root" }
+    ap-southeast-1: { ELBAccountARN: "arn:aws:iam::114774131450:root" }
+    ap-southeast-2: { ELBAccountARN: "arn:aws:iam::783225319266:root" }
+    ap-south-1:     { ELBAccountARN: "arn:aws:iam::718504428378:root" }
+    sa-east-1:      { ELBAccountARN: "arn:aws:iam::507241528517:root" }
+    us-gov-west-1:  { ELBAccountARN: "arn:aws:iam::048591011584:root" }
+    cn-north-1:     { ELBAccountARN: "arn:aws:iam::638102146993:root" }
+
+Parameters:
+  # General
+  EnvName:
+    Description: Environment Name (16 character long)
+    Type: String
+    MaxLength: 16
+  EnvType:
+    Description: Environment type
+    Type: String
+    Default: prd
+    AllowedValues:
+    - prd
+    - stg
+    - dev
+
+  # Network
+  VPCCidr:
+    Description: VPC CIDR
+    Type: String
+    Default: 10.0.0.0/16
+  AvailabilityZone1:
+    Description: Select AvailabilityZone1
+    Type: AWS::EC2::AvailabilityZone::Name
+    Default: ap-northeast-1a
+  AvailabilityZone2:
+    Description: Select AvailabilityZone2
+    Type: AWS::EC2::AvailabilityZone::Name
+    Default: ap-northeast-1c
+  AvailabilityZone3:
+    Description: Select AvailabilityZone3
+    Type: AWS::EC2::AvailabilityZone::Name
+    Default: ap-northeast-1d
+  Frontend1Cidr:
+    Description: Frontend1 subnet CIDR
+    Type: String
+    Default: 10.0.1.0/24
+  Frontend2Cidr:
+    Description: Frontend2 subnet CIDR
+    Type: String
+    Default: 10.0.2.0/24
+  Frontend3Cidr:
+    Description: Frontend3 subnet CIDR
+    Type: String
+    Default: 10.0.3.0/24
+  Application1Cidr:
+    Description: Application1 subnet CIDR
+    Type: String
+    Default: 10.0.10.0/24
+  Application2Cidr:
+    Description: Application2 subnet CIDR
+    Type: String
+    Default: 10.0.20.0/24
+  Application3Cidr:
+    Description: Application3 subnet CIDR
+    Type: String
+    Default: 10.0.30.0/24
+  Datastore1Cidr:
+    Description: Datastore1 subnet CIDR
+    Type: String
+    Default: 10.0.100.0/24
+  Datastore2Cidr:
+    Description: Datastore2 subnet CIDR
+    Type: String
+    Default: 10.0.200.0/24
+  Datastore3Cidr:
+    Description: Datastore3 subnet CIDR
+    Type: String
+    Default: 10.0.300.0/24
+  CustomerPublicIP:
+    Description: Customer public IP Address for security group(SSH). XXX.XXX.XXX.XXX/32
+    Default: 192.168.xxx.xxx/32
+    Type: String
+  CustomerPublicIPDescription:
+    Description: Description of Customer's SSH Security Group. 
+    Type: String
+  Concrete5JapanPublicIP:
+    Description: Concrete5Japan public IP Address for security group(SSH). 153.120.171.20/32
+    Default: 153.120.171.20/32
+    Type: String
+  SEPublicIP:
+    Description: SE's public IP Address for security group(SSH). 203.174.65.0/24
+    Default: 203.174.65.0/24
+    Type: String
+  SEPublicIPSEPublicIPDescription:
+    Description: Description of Server Support Company's SSH Security Group.
+    Type: String
+
+  # EC2 Instances
+  AMIID:
+    Description: AMI ID (ami-06cd52961ce9f0d85 for Amazon Linux, ami-0f310fced6141e627 for Amazon Linux 2)
+    Default: ami-0f310fced6141e627
+    Type: String
+  EC2InstanceType:
+    Description: EC2 Instance type
+    Type: String
+    Default: m5.large
+    AllowedValues: 
+      - t2.nano
+      - t2.micro
+      - t2.small
+      - t2.medium
+      - t2.large
+      - t2.xlarge
+      - t2.2xlarge
+      - t3.nano
+      - t3.micro
+      - t3.small
+      - t3.medium
+      - t3.large
+      - t3.xlarge
+      - t3.2xlarge
+      - t3a.nano
+      - t3a.micro
+      - t3a.small
+      - t3a.medium
+      - t3a.large
+      - t3a.xlarge
+      - t3a.2xlarge
+      - m5.large
+      - m5.xlarge
+      - m5.2xlarge
+      - m5.4xlarge
+      - m5.12xlarge
+      - m5.16xlarge
+      - m5.24xlarge
+      - m5a.large
+      - m5a.xlarge
+      - m5a.2xlarge
+      - m5a.4xlarge
+      - m5a.12xlarge
+      - m5a.16xlarge
+      - m5a.24xlarge
+      - m5ad.large
+      - m5ad.xlarge
+      - m5ad.2xlarge
+      - m5ad.4xlarge
+      - m5ad.12xlarge
+      - m5ad.16xlarge
+      - m5ad.24xlarge
+      - m5d.large
+      - m5d.xlarge
+      - m5d.2xlarge
+      - m5d.4xlarge
+      - m5d.12xlarge
+      - m5d.16xlarge
+      - m5d.24xlarge
+      - m5d.metal
+      - m5n.large
+      - m5n.xlarge
+      - m5n.2xlarge
+      - m5n.4xlarge
+      - m5n.12xlarge
+      - m5n.16xlarge
+      - m5dn.large
+      - m5dn.xlarge
+      - m5dn.2xlarge
+      - m5dn.4xlarge
+      - m5dn.12xlarge
+      - m5dn.16xlarge
+      - m5dn.24xlarge
+      - m4.xlarge
+      - m4.2xlarge
+      - m4.4xlarge
+      - m4.10xlarge
+      - m4.16xlarge
+      - c5.large
+      - c5.xlarge
+      - c5.2xlarge
+      - c5.4xlarge
+      - c5.9xlarge
+      - c5.12xlarge
+      - c5.18xlarge
+      - c5.24xlarge
+      - c5.metal
+      - r5.large
+      - r5.xlarge
+      - r5.2xlarge
+      - r5.4xlarge
+      - r5.8xlarge
+      - r5.12xlarge
+      - r5.16xlarge
+      - r5.24xlarge
+      - r5.metal
+      - g2.2xlarge
+      - g2.8xlarge
+      - g3s.xlarge
+      - g3.4xlarge
+      - g3.8xlarge
+      - g3.16xlarge
+      - g4dn.xlarge
+      - g4dn.2xlarge
+      - g4dn.8xlarge
+      - g4dn.12xlarge
+      - g4dn.16xlarge
+      - p2.xlarge
+      - d2.xlarge
+      - d2.2xlarge
+      - d2.4xlarge
+      - d2.8xlarge
+      - i2.xlarge
+      - i2.2xlarge
+      - i2.4xlarge
+      - i2.8xlarge
+      - i3.large
+      - i3.xlarge
+      - i3.2xlarge
+      - i3.4xlarge
+      - i3.8xlarge
+      - i3.16xlarge
+      - i3.metal
+      - i3en.large
+      - i3en.xlarge
+      - i3en.2xlarge
+      - i3en.4xlarge
+      - i3en.8xlarge
+      - i3en.16xlarge
+      - i3en.metal
+  EC2VolumeSize:
+    Description: EBS volume size for EC2
+    Type: String
+    Default: 20
+    AllowedPattern: '[89]|[1-8][0-9]|9[0-9]|[1-8][0-9]{2}|9[0-8][0-9]|99[0-9]|[1-8][0-9]{3}|9[0-8][0-9]{2}|99[0-8][0-9]|999[0-9]|1[0-5][0-9]{3}|16[0-2][0-9]{2}|163[0-7][0-9]|1638[0-4]'
+    ConstraintDescription: must be more than 8GB and less than 16TB (16,384GB)
+  KeyName:
+    Description: Key pair name for EC2
+    Type: AWS::EC2::KeyPair::KeyName
+
+  # RDS Instances
+  DBEngine:
+    Description: DB engine type
+    Type: String
+    Default: mariadb
+    AllowedValues:
+    - aurora
+    - aurora-mysql
+    - mariadb
+    - mysql
+  DBInstanceType:
+    Description: DB Instance type (be careful db.t2.micro doesn't support data encryption)
+    Type: String
+    Default: db.m5.large
+    AllowedValues:
+      - db.t2.micro
+      - db.t2.small
+      - db.t2.medium
+      - db.t2.large
+      - db.t2.xlarge
+      - db.t3.micro
+      - db.t3.small
+      - db.t3.medium
+      - db.t3.large
+      - db.t3.xlarge
+      - db.t3.2xlarge
+      - db.m4.large
+      - db.m4.xlarge
+      - db.m4.2xlarge
+      - db.m4.4xlarge
+      - db.m4.10xlarge
+      - db.m4.16xlarge
+      - db.m5.large
+      - db.m5.xlarge
+      - db.m5.2xlarge
+      - db.m5.4xlarge
+      - db.m5.12xlarge
+      - db.m5.24xlarge
+  DBStorageSize:
+    Description: Storage size for db instace
+    Type: String
+    Default: 20
+    AllowedPattern: '[2-8][0-9]|9[0-9]|[1-8][0-9]{2}|9[0-8][0-9]|99[0-9]|[1-8][0-9]{3}|9[0-8][0-9]{2}|99[0-8][0-9]|999[0-9]|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-6]'
+    ConstraintDescription: must be more than 20GB and less than 64TB (65,536GB)
+  DBEngineVersion:
+    Description: DB engine(MySQL) version
+    Type: String
+    Default: 10.4.8
+    AllowedValues:
+    - 10.4.8
+    - 10.3.20
+    - 10.3.13
+    - 10.3.8
+    - 10.2.21
+    - 10.2.15
+    - 10.2.12
+    - 10.2.11
+    - 10.1.34
+    - 10.1.31
+    - 10.1.26
+    - 10.1.23
+    - 10.1.19
+    - 10.1.14
+    - 10.0.35
+    - 10.0.34
+    - 10.0.32
+    - 10.0.31
+    - 10.0.28
+    - 10.0.24
+    - 10.0.17
+    - 5.7.21
+    - 5.7.19
+    - 5.7.17
+    - 5.7.16
+    - 5.6.39
+    - 5.6.37
+    - 5.6.35
+    - 5.6.34
+    - 5.6.29
+    - 5.6.27
+    - 5.5.59
+    - 5.5.57
+    - 5.5.54
+    - 5.5.53
+    - 5.5.46
+  DBEngineFamily:
+    Description: DB engine family
+    Type: String
+    Default: MariaDB10.4
+    AllowedValues:
+    - MariaDB10.4
+    - MariaDB10.3
+    - MariaDB10.2
+    - MariaDB10.1
+    - MySQL8.0
+    - MySQL5.7
+    - MySQL5.6
+  DBMajorEngineVersion:
+    Description: DB engine major version
+    Type: String
+    Default: 10.4
+    AllowedValues:
+    - 10.4
+    - 10.3
+    - 10.2
+    - 10.1
+    - 5.7
+    - 5.6
+    - 5.5
+  DBMasterUserName:
+    Description: DB instance master username
+    Type: String
+    Default: master
+  DBMasterUserPassword:
+    NoEcho: true
+    Description: DB instance master user password
+    Type: String
+    MinLength: 1
+    MaxLength: 41
+#  DBTimezone:
+#    Description: DB engine timezone
+#    Type: String
+#    Default: Asia/Tokyo
+#    AllowedValues:
+#    - Asia/Singapore
+#    - Asia/Tokyo
+#    - US/Central
+#    - US/Eastern
+#    - US/Pacific
+#    - UTC
+
+  # S3 Bucket
+  ContentsS3BucketName:
+    Description: S3 bucket for static contents
+    Type: String
+  CloudFrontLogsS3BucketName:
+    Description: S3 bucket for CloudFront logs
+    Type: String
+  ELBLogsS3BucketName:
+    Description: S3 bucket for ELB logs
+    Type: String
+  S3WebsitehostingLogsS3BucketName:
+    Description: S3 bucket for S3 websitehosting logs
+    Type: String
+  EC2LogsS3BucketName:
+    Description: S3 bucket for application logs
+    Type: String
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+    -
+      Label:
+        default: Environment Configuration
+      Parameters:
+      - EnvName
+      - EnvType
+    -
+      Label:
+        default: VPC Configuration
+      Parameters:
+      - VPCCidr
+      - AvailabilityZone1
+      - AvailabilityZone2
+      - AvailabilityZone3
+      - Frontend1Cidr
+      - Frontend2Cidr
+      - Frontend3Cidr
+      - Application1Cidr
+      - Application2Cidr
+      - Application3Cidr
+      - Datastore1Cidr
+      - Datastore2Cidr
+      - Datastore3Cidr
+    -
+      Label:
+        default: Security Group for SSH
+      Parameters:
+      - CustomerPublicIP
+      - CustomerPublicIPDescription
+      - Concrete5JapanPublicIP
+      - SEPublicIP
+      - SEPublicIPDescription
+    -
+      Label:
+        default: EC2 Configuration
+      Parameters:
+      - AMIID
+      - EC2InstanceType
+      - EC2VolumeSize
+      - KeyName
+    -
+      Label:
+        default: RDS Configuration
+      Parameters:
+      - DBInstanceType
+      - DBStorageSize
+      - DBEngine
+      - DBEngineVersion
+      - DBEngineFamily
+      - DBMajorEngineVersion
+      - DBMasterUserName
+      - DBMasterUserPassword
+      #- DBTimezone
+    -
+      Label:
+        default: S3 Configuration
+      Parameters:
+      - ContentsS3BucketName
+      - CloudFrontLogsS3BucketName
+      - ELBLogsS3BucketName
+      - S3WebsitehostingLogsS3BucketName
+      - EC2LogsS3BucketName
+
+Resources:
+  # VPC
+  VPC:
+    Type: AWS::EC2::VPC
+    # DeletionPolicy: Retain
+    Properties:
+      CidrBlock: !Ref VPCCidr
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      InstanceTenancy: default
+      Tags:
+      - Key: Name
+        Value: !Sub ${EnvName}-${EnvType}-vpc
+      - Key: EnvName
+        Value: !Ref EnvName
+      - Key: EnvType
+        Value: !Ref EnvType
+
+  # InternetGateway
+  IGW:
+    Type: AWS::EC2::InternetGateway
+    # DeletionPolicy: Retain
+    Properties:
+      Tags:
+      - Key: Name
+        Value: !Sub ${EnvName}-${EnvType}-igw
+      - Key: EnvName
+        Value: !Ref EnvName
+      - Key: EnvType
+        Value: !Ref EnvType
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    # DeletionPolicy: Retain
+    Properties:
+      InternetGatewayId: !Ref IGW
+      VpcId: !Ref VPC
+
+  # Subnet
+  ## Frontend
+  Frontend1:
+    Type: AWS::EC2::Subnet
+    # DeletionPolicy: Retain
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Ref AvailabilityZone1
+      CidrBlock: !Ref Frontend1Cidr
+      MapPublicIpOnLaunch: false
+      Tags:
+      - Key: Name
+        Value: !Sub
+        - ${EnvName}-${EnvType}-frontend-subnet-${AZ}
+        - { AZ: !Select [2, !Split ["-", !Ref AvailabilityZone1]] }
+      - Key: EnvName
+        Value: !Ref EnvName
+      - Key: EnvType
+        Value: !Ref EnvType
+  Frontend2:
+    Type: AWS::EC2::Subnet
+    # DeletionPolicy: Retain
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Ref AvailabilityZone2
+      CidrBlock: !Ref Frontend2Cidr
+      MapPublicIpOnLaunch: false
+      Tags:
+      - Key: Name
+        Value: !Sub
+        - ${EnvName}-${EnvType}-frontend-subnet-${AZ}
+        - { AZ: !Select [2, !Split ["-", !Ref AvailabilityZone2]] }
+      - Key: EnvName
+        Value: !Ref EnvName
+      - Key: EnvType
+        Value: !Ref EnvType
+  Frontend3:
+        Type: AWS::EC2::Subnet
+        # DeletionPolicy: Retain
+        Properties:
+          VpcId: !Ref VPC
+          AvailabilityZone: !Ref AvailabilityZone3
+          CidrBlock: !Ref Frontend3Cidr
+          MapPublicIpOnLaunch: false
+          Tags:
+          - Key: Name
+            Value: !Sub
+            - ${EnvName}-${EnvType}-frontend-subnet-${AZ}
+            - { AZ: !Select [2, !Split ["-", !Ref AvailabilityZone3]] }
+          - Key: EnvName
+            Value: !Ref EnvName
+          - Key: EnvType
+            Value: !Ref EnvType
+  ### Application
+  Application1:
+    Type: AWS::EC2::Subnet
+    # DeletionPolicy: Retain
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Ref AvailabilityZone1
+      CidrBlock: !Ref Application1Cidr
+      MapPublicIpOnLaunch: false
+      Tags:
+      - Key: Name
+        Value: !Sub
+        - ${EnvName}-${EnvType}-application-subnet-${AZ}
+        - { AZ: !Select [2, !Split [ "-", !Ref AvailabilityZone1]] }
+      - Key: EnvName
+        Value: !Ref EnvName
+      - Key: EnvType
+        Value: !Ref EnvType
+  Application2:
+    Type: AWS::EC2::Subnet
+    # DeletionPolicy: Retain
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Ref AvailabilityZone2
+      CidrBlock: !Ref Application2Cidr
+      MapPublicIpOnLaunch: false
+      Tags:
+      - Key: Name
+        Value: !Sub
+        - ${EnvName}-${EnvType}-application-subnet-${AZ}
+        - { AZ: !Select [2, !Split [ "-", !Ref AvailabilityZone2]] }
+      - Key: EnvName
+        Value: !Ref EnvName
+      - Key: EnvType
+        Value: !Ref EnvType
+  Application3:
+        Type: AWS::EC2::Subnet
+        # DeletionPolicy: Retain
+        Properties:
+          VpcId: !Ref VPC
+          AvailabilityZone: !Ref AvailabilityZone3
+          CidrBlock: !Ref Application3Cidr
+          MapPublicIpOnLaunch: false
+          Tags:
+          - Key: Name
+            Value: !Sub
+            - ${EnvName}-${EnvType}-application-subnet-${AZ}
+            - { AZ: !Select [2, !Split [ "-", !Ref AvailabilityZone3]] }
+          - Key: EnvName
+            Value: !Ref EnvName
+          - Key: EnvType
+            Value: !Ref EnvType
+  ### Datastore
+  Datastore1:
+    Type: AWS::EC2::Subnet
+    # DeletionPolicy: Retain
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Ref AvailabilityZone1
+      CidrBlock: !Ref Datastore1Cidr
+      MapPublicIpOnLaunch: false
+      Tags:
+      - Key: Name
+        Value: !Sub
+        - ${EnvName}-${EnvType}-datastore-subnet-${AZ}
+        - { AZ: !Select [2, !Split [ "-", !Ref AvailabilityZone1]] }
+      - Key: EnvName
+        Value: !Ref EnvName
+      - Key: EnvType
+        Value: !Ref EnvType
+  Datastore2:
+    Type: AWS::EC2::Subnet
+    # DeletionPolicy: Retain
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Ref AvailabilityZone2
+      CidrBlock: !Ref Datastore2Cidr
+      MapPublicIpOnLaunch: false
+      Tags:
+      - Key: Name
+        Value: !Sub
+        - ${EnvName}-${EnvType}-datastore-subnet-${AZ}
+        - { AZ: !Select [2, !Split ["-", !Ref AvailabilityZone2]] }
+      - Key: EnvName
+        Value: !Ref EnvName
+      - Key: EnvType
+        Value: !Ref EnvType
+  Datastore3:
+        Type: AWS::EC2::Subnet
+        # DeletionPolicy: Retain
+        Properties:
+          VpcId: !Ref VPC
+          AvailabilityZone: !Ref AvailabilityZone3
+          CidrBlock: !Ref Datastore3Cidr
+          MapPublicIpOnLaunch: false
+          Tags:
+          - Key: Name
+            Value: !Sub
+            - ${EnvName}-${EnvType}-datastore-subnet-${AZ}
+            - { AZ: !Select [2, !Split ["-", !Ref AvailabilityZone3]] }
+          - Key: EnvName
+            Value: !Ref EnvName
+          - Key: EnvType
+            Value: !Ref EnvType
+
+  # RouteTable
+  ## Public RouteTable
+  Publicrtb:
+    Type: AWS::EC2::RouteTable
+    # DeletionPolicy: Retain
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+      - Key: Name
+        Value: !Sub ${EnvName}-${EnvType}-public-rtb
+      - Key: EnvName
+        Value: !Ref EnvName
+      - Key: EnvType
+        Value: !Ref EnvType
+  PublicrtbAssociation1:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    # DeletionPolicy: Retain
+    Properties:
+      RouteTableId: !Ref Publicrtb
+      SubnetId: !Ref Frontend1
+  PublicrtbAssociation2:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    # DeletionPolicy: Retain
+    Properties:
+      RouteTableId: !Ref Publicrtb
+      SubnetId: !Ref Frontend2
+  PublicrtbAssociation3:
+      Type: AWS::EC2::SubnetRouteTableAssociation
+      # DeletionPolicy: Retain
+      Properties:
+        RouteTableId: !Ref Publicrtb
+        SubnetId: !Ref Frontend3
+  PublicrtbAssociation4:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    # DeletionPolicy: Retain
+    Properties:
+      RouteTableId: !Ref Publicrtb
+      SubnetId: !Ref Application1
+  PublicrtbAssociation5:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    # DeletionPolicy: Retain
+    Properties:
+      RouteTableId: !Ref Publicrtb
+      SubnetId: !Ref Application2
+  PublicrtbAssociation6:
+      Type: AWS::EC2::SubnetRouteTableAssociation
+      # DeletionPolicy: Retain
+      Properties:
+        RouteTableId: !Ref Publicrtb
+        SubnetId: !Ref Application3
+  PublicInternetRoute:
+    Type: AWS::EC2::Route
+    DependsOn: AttachGateway
+    # DeletionPolicy: Retain
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref IGW
+      RouteTableId: !Ref Publicrtb
+
+  ## Private RouteTable
+  Privatertb:
+    Type: AWS::EC2::RouteTable
+    # DeletionPolicy: Retain
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+      - Key: Name
+        Value: !Sub ${EnvName}-${EnvType}-private-rtb
+      - Key: EnvName
+        Value: !Ref EnvName
+      - Key: EnvType
+        Value: !Ref EnvType
+  PrivatertbAssociation1:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    # DeletionPolicy: Retain
+    Properties:
+      RouteTableId: !Ref Privatertb
+      SubnetId: !Ref Datastore1
+  PrivatertbAssociation2:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    # DeletionPolicy: Retain
+    Properties:
+      RouteTableId: !Ref Privatertb
+      SubnetId: !Ref Datastore2
+  PrivatertbAssociation3:
+      Type: AWS::EC2::SubnetRouteTableAssociation
+      # DeletionPolicy: Retain
+      Properties:
+        RouteTableId: !Ref Privatertb
+        SubnetId: !Ref Datastore3
+
+  # Security Group
+  ## ELBSecurity Group
+  ELBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    # DeletionPolicy: Retain
+    Properties:
+      GroupName: !Sub ${EnvName}-${EnvType}-elb-sg
+      GroupDescription: Allow HTTP/HTTPS from internet.
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 80
+        ToPort: 80
+        CidrIp: 0.0.0.0/0
+        Description: From internet
+      - IpProtocol: tcp
+        FromPort: 443
+        ToPort: 443
+        CidrIp: 0.0.0.0/0
+        Description: From internet
+      Tags:
+      - Key: Name
+        Value: !Sub ${EnvName}-${EnvType}-elb-sg
+      - Key: EnvName
+        Value: !Ref EnvName
+      - Key: EnvType
+        Value: !Ref EnvType
+      VpcId: !Ref VPC
+
+  ## WebServer Security Group
+  WebServerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    # DeletionPolicy: Retain
+    Properties:
+      GroupName: !Sub ${EnvName}-${EnvType}-ec2-sg
+      GroupDescription: !Sub Allow HTTP from ELB.
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 80
+        ToPort: 80
+        SourceSecurityGroupId: !Ref ELBSecurityGroup
+        Description: From ELB
+      Tags:
+      - Key: Name
+        Value: !Sub ${EnvName}-${EnvType}-ec2-sg
+      - Key: EnvName
+        Value: !Ref EnvName
+      - Key: EnvType
+        Value: !Ref EnvType
+      VpcId: !Ref VPC
+
+  ## RDS Security Group
+  RDSSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    # DeletionPolicy: Retain
+    Properties:
+      GroupName: !Sub ${EnvName}-${EnvType}-rds-sg
+      GroupDescription: Allow MySQL(3306/TCP) from EC2 instances.
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 3306
+        ToPort: 3306
+        SourceSecurityGroupId: !Ref WebServerSecurityGroup
+        Description: From EC2
+      Tags:
+      - Key: Name
+        Value: !Sub ${EnvName}-${EnvType}-rds-sg
+      - Key: EnvName
+        Value: !Ref EnvName
+      - Key: EnvType
+        Value: !Ref EnvType
+      VpcId: !Ref VPC
+
+  MainteSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    # DeletionPolicy: Retain
+    Properties:
+      GroupName: !Sub ${EnvName}-${EnvType}-mainte-sg
+      GroupDescription: Allow SSH from specify the public IP Address.
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+        CidrIp: !Ref CustomerPublicIP
+        Description: !Ref CustomerPublicIPDescription
+      - IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+        CidrIp: !Ref Concrete5JapanPublicIP
+        Description: Concrete5 Japan
+      - IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22 
+        CidrIp: !Ref SEPublicIP
+        Description: !Ref SEPublicIPDescription
+      Tags:
+      - Key: Name
+        Value: !Sub ${EnvName}-${EnvType}-mainte-sg
+      - Key: EnvName
+        Value: !Ref EnvName
+      - Key: EnvType
+        Value: !Ref EnvType
+      VpcId: !Ref VPC
+  # ELB
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    DependsOn: BucketPolicyELBLogsS3Bucket
+    # DeletionPolicy: Retain
+    Properties:
+      LoadBalancerAttributes:
+      - Key: access_logs.s3.enabled
+        Value: true
+      - Key: access_logs.s3.bucket
+        Value: !Ref ELBLogsS3Bucket
+      - Key: deletion_protection.enabled
+        Value: true
+      - Key: idle_timeout.timeout_seconds
+        Value: 60
+      Name: !Sub ${EnvName}-${EnvType}-elb
+      Scheme: internet-facing
+      SecurityGroups:
+      - !Ref ELBSecurityGroup
+      Subnets:
+      - !Ref Frontend1
+      - !Ref Frontend2
+      Tags:
+      - Key: Name
+        Value: !Sub ${EnvName}-${EnvType}-elb
+      - Key: EnvName
+        Value: !Ref EnvName
+      - Key: EnvType
+        Value: !Ref EnvType
+      Type: application
+      IpAddressType: ipv4
+  LoadBalancerTargetGroup1:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    # DeletionPolicy: Retain
+    Properties:
+      HealthCheckIntervalSeconds: 30
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 5
+      Matcher:
+        HttpCode: 200
+      Name: !Sub ${EnvName}-${EnvType}-app-targetgroup
+      Port: 80
+      Protocol: HTTP
+      TargetGroupAttributes:
+      - Key: deregistration_delay.timeout_seconds
+        Value: 300
+      - Key: stickiness.enabled
+        Value: true
+      - Key: stickiness.type
+        Value: lb_cookie
+      - Key: stickiness.lb_cookie.duration_seconds
+        Value: 86400
+      Targets:
+      - Id: !Ref WebServer1
+        Port: 80
+      - Id: !Ref WebServer2
+        Port: 80
+      UnhealthyThresholdCount: 2
+      VpcId:
+        !Ref VPC
+      Tags:
+      - Key: Name
+        Value: !Sub ${EnvName}-${EnvType}-targetgroup
+      - Key: EnvName
+        Value: !Ref EnvName
+      - Key: EnvType
+        Value: !Ref EnvType
+  LoadBalancerListener1:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    # DeletionPolicy: Retain
+    Properties:
+      #Certificates:
+      #- CertificateArn: !FindInMap [ !Ref EnvType, CertificateArns, CertificateArn1 ]
+      DefaultActions:
+      - TargetGroupArn: !Ref LoadBalancerTargetGroup1
+        Type: forward
+      LoadBalancerArn: !Ref LoadBalancer
+      #Port: 443
+      Port: 80
+      #Protocol: HTTPS
+      Protocol: HTTP
+      # SslPolicy: String
+
+  # EC2
+  ## WebServer
+  WebServer1:
+    Type: AWS::EC2::Instance
+    # DeletionPolicy: Retain
+    Properties:
+      DisableApiTermination: true
+      KeyName: !Ref KeyName
+      ImageId: !Ref AMIID
+      InstanceType: !Ref EC2InstanceType
+      BlockDeviceMappings:
+      - DeviceName: /dev/xvda
+        Ebs:
+          VolumeType: gp2
+          VolumeSize: !Ref EC2VolumeSize
+          DeleteOnTermination: true
+      NetworkInterfaces:
+      - AssociatePublicIpAddress: true
+        DeviceIndex: 0
+        DeleteOnTermination: true
+        GroupSet:
+        - !Ref WebServerSecurityGroup
+        - !Ref MainteSecurityGroup
+        SubnetId: !Ref Application1
+      Tags:
+      - Key: Name
+        Value: !Sub
+        - ${EnvName}-${EnvType}-ec2-${AZ}
+        - { AZ: !Select [2, !Split ["-", !Ref AvailabilityZone1]] }
+      - Key: EnvName
+        Value: !Ref EnvName
+      - Key: EnvType
+        Value: !Ref EnvType
+
+  WebServer2:
+    Type: AWS::EC2::Instance
+    # DeletionPolicy: Retain
+    Properties:
+      DisableApiTermination: true
+      KeyName: !Ref KeyName
+      ImageId: !Ref AMIID
+      InstanceType: !Ref EC2InstanceType
+      BlockDeviceMappings:
+      - DeviceName: /dev/xvda
+        Ebs:
+          VolumeType: gp2
+          VolumeSize: !Ref EC2VolumeSize
+          DeleteOnTermination: true
+      NetworkInterfaces:
+      - AssociatePublicIpAddress: true
+        DeviceIndex: 0
+        DeleteOnTermination: true
+        GroupSet:
+        - !Ref WebServerSecurityGroup
+        - !Ref MainteSecurityGroup
+        SubnetId: !Ref Application2
+      Tags:
+      - Key: Name
+        Value: !Sub
+        - ${EnvName}-${EnvType}-ec2-${AZ}
+        - { AZ: !Select [2, !Split ["-", !Ref AvailabilityZone2]] }
+      - Key: EnvName
+        Value: !Ref EnvName
+      - Key: EnvType
+        Value: !Ref EnvType
+
+  # Elastic IP
+  ## WebServer1
+  ElasticIPWebServer1:
+    Type: AWS::EC2::EIP
+    # DeletionPolicy: Retain
+    Properties:
+      Domain: vpc
+  ElasticIPAssociationElasticIPWebServer1:
+    Type: AWS::EC2::EIPAssociation
+    # DeletionPolicy: Retain
+    Properties:
+      AllocationId: !GetAtt ElasticIPWebServer1.AllocationId
+      InstanceId: !Ref WebServer1
+
+  ## WebServer2
+  ElasticIPWebServer2:
+    Type: AWS::EC2::EIP
+    # DeletionPolicy: Retain
+    Properties:
+      Domain: vpc
+  ElasticIPAssociationElasticIPWebServer2:
+    Type: AWS::EC2::EIPAssociation
+    # DeletionPolicy: Retain
+    Properties:
+      AllocationId: !GetAtt ElasticIPWebServer2.AllocationId
+      InstanceId: !Ref WebServer2
+
+  # RDS
+  ## RDS Instance
+  DBInstance:
+    Type: AWS::RDS::DBInstance
+    # DeletionPolicy: Retain
+    Properties:
+      AllocatedStorage: !Ref DBStorageSize
+      AllowMajorVersionUpgrade: false
+      AutoMinorVersionUpgrade: false
+      BackupRetentionPeriod: 7
+      CopyTagsToSnapshot: true
+      DBInstanceClass: !Ref DBInstanceType
+      DBInstanceIdentifier: !Sub ${EnvName}-${EnvType}-rds
+      DBParameterGroupName: !Ref DBParameterGroup
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      Engine: !Ref DBEngine
+      EngineVersion: !Ref DBEngineVersion
+      MasterUsername: !Ref DBMasterUserName
+      MasterUserPassword: !Ref DBMasterUserPassword
+      MonitoringInterval: 0
+      MultiAZ: true
+      OptionGroupName: !Ref OptionGroup
+      Port: 3306
+      PreferredBackupWindow: 16:00-16:30
+      PreferredMaintenanceWindow: Sat:16:31-Sat:17:01
+      PubliclyAccessible: false
+      StorageEncrypted: true
+      StorageType: gp2
+      Tags:
+      - Key: Name
+        Value: !Sub ${EnvName}-${EnvType}-rds
+      - Key: EnvName
+        Value: !Ref EnvName
+      - Key: EnvType
+        Value: !Ref EnvType
+      VPCSecurityGroups:
+      - !Ref RDSSecurityGroup
+      # Timezone: !Ref DBTimezone
+
+  ## Subnet Group
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    # DeletionPolicy: Retain
+    Properties:
+      DBSubnetGroupName: !Sub ${EnvName}-${EnvType}-dbsubnet-group
+      DBSubnetGroupDescription: !Sub Subnet group for ${EnvName}-${EnvType}-rds
+      SubnetIds:
+      - !Ref Datastore1
+      - !Ref Datastore2
+      # - !Ref Datastore3
+      Tags:
+      - Key: Name
+        Value: !Sub ${EnvName}-${EnvType}-dbsubnet-group
+      - Key: EnvName
+        Value: !Ref EnvName
+      - Key: EnvType
+        Value: !Ref EnvType
+  ## ParameterGroup
+  DBParameterGroup:
+    Type: AWS::RDS::DBParameterGroup
+    # DeletionPolicy: Retain
+    Properties:
+      Description: !Sub Parameter group for ${EnvName}-${EnvType}-rds
+      Family: !Ref DBEngineFamily
+      Parameters:
+        # Logging
+        slow_query_log: 1
+        general_log: 1
+        long_query_time: 2
+        log_queries_not_using_indexes: 0
+        log_output: FILE
+        character_set_client: utf8mb4
+        character_set_connection: utf8mb4
+        character_set_database: utf8mb4
+        character_set_results: utf8mb4
+        character_set_server: utf8mb4
+        skip-character-set-client-handshake: 1
+      Tags:
+      - Key: Name
+        Value: !Sub ${EnvName}-${EnvType}-dbparameter-group
+      - Key: EnvName
+        Value: !Ref EnvName
+      - Key: EnvType
+        Value: !Ref EnvType
+  ## Option Group
+  OptionGroup:
+    Type: AWS::RDS::OptionGroup
+    # DeletionPolicy: Retain
+    Properties:
+      OptionGroupDescription: !Sub Option group for ${EnvName}-${EnvType}-rds
+      EngineName: mysql
+      MajorEngineVersion: !Ref DBMajorEngineVersion
+      #OptionConfigurations:
+      #  - OptionName: MARIADB_AUDIT_PLUGIN
+      #    OptionSettings:
+      #      - Name: SERVER_AUDIT_INCL_USERS
+      #        Value: xxxx
+      #      - Name: SERVER_AUDIT_FILE_ROTATIONS
+      #        Value: 10
+      #      - Name: SERVER_AUDIT_EVENTS
+      #        Value: CONNECT,QUERY,TABLE
+      #      - Name: SERVER_AUDIT_FILE_ROTATE_SIZE
+      #        Value: 524288000
+      Tags:
+      - Key: Name
+        Value: !Sub ${EnvName}-${EnvType}-dboption-group
+      - Key: EnvName
+        Value: !Ref EnvName
+      - Key: EnvType
+        Value: !Ref EnvType
+
+  # S3 Bucket
+  ## S3 Bucket for concrete5 contents
+  ContentsS3Bucket:
+    Type: AWS::S3::Bucket
+    # DeletionPolicy: Retain
+    Properties:
+      BucketName: !Ref ContentsS3BucketName
+      AccessControl: Private
+
+  ## S3 Bucket for CloudFront logs
+  CloudFrontLogsS3Bucket:
+    Type: AWS::S3::Bucket
+    # DeletionPolicy: Retain
+    Properties:
+      BucketName: !Ref CloudFrontLogsS3BucketName
+      AccessControl: Private
+      LifecycleConfiguration:
+        Rules:
+        - Id: Expire after 400 days
+          Status: Enabled
+          ExpirationInDays: 400
+
+  ## S3 Bucket for ELB logs
+  ELBLogsS3Bucket:
+    Type: AWS::S3::Bucket
+    # DeletionPolicy: Retain
+    Properties:
+      BucketName: !Ref ELBLogsS3BucketName
+      AccessControl: Private
+      LifecycleConfiguration:
+        Rules:
+        - Id: Expire after 400 days
+          Status: Enabled
+          ExpirationInDays: 400
+
+  BucketPolicyELBLogsS3Bucket:
+    Type: AWS::S3::BucketPolicy
+    # DeletionPolicy: Retain
+    Properties:
+      Bucket: !Ref ELBLogsS3Bucket
+      PolicyDocument:
+        !Sub
+      - |
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": "${Principal}"
+              },
+              "Action": "s3:PutObject",
+              "Resource": "arn:aws:s3:::${ELBLogsS3Bucket}/AWSLogs/${AWS::AccountId}/*"
+            }
+          ]
+        }
+      - { Principal: !FindInMap [ ELBAccountID, !Ref "AWS::Region", ELBAccountARN ] }
+
+  ## S3 Bucket for S3 websitehosting logs
+  S3WebsitehostingLogsS3Bucket:
+    Type: AWS::S3::Bucket
+    # DeletionPolicy: Retain
+    Properties:
+      BucketName: !Ref S3WebsitehostingLogsS3BucketName
+      AccessControl: Private
+      LifecycleConfiguration:
+        Rules:
+        - Id: Expire after 400 days
+          Status: Enabled
+          ExpirationInDays: 400
+
+  ## S3 Bucket for EC2 logs
+  EC2LogsS3Bucket:
+    Type: AWS::S3::Bucket
+    # DeletionPolicy: Retain
+    Properties:
+      BucketName: !Ref EC2LogsS3BucketName
+      AccessControl: Private
+      LifecycleConfiguration:
+        Rules:
+        - Id: Expire after 400 days
+          Status: Enabled
+          ExpirationInDays: 400
+
+  # Route 53
+  ## RDS
+  #RDSRecordSet:
+  #  Type: "AWS::Route53::RecordSet"
+  #  # DeletionPolicy: Retain
+  #  Properties:
+  #    Comment: !Sub ${EnvName}-${EnvType}
+  #    HostedZoneId: !FindInMap [ !Ref EnvType, HostedZoneID, local ]
+  #    Name: !Sub ${EnvName}-${EnvType}-dbinstance.local
+  #    ResourceRecords:
+  #      - !GetAtt DBInstance.Endpoint.Address
+  #    TTL: 60
+  #    Type: CNAME
+  #
+  #WebServer1RecordSet:
+  #  Type: "AWS::Route53::RecordSet"
+  #  # DeletionPolicy: Retain
+  #  Properties:
+  #    Comment: !Sub ${EnvName}-${EnvType}-
+  #    HostedZoneId: !FindInMap [ !Ref EnvType, HostedZoneID, local ]
+  #    Name: !Sub ${EnvName}-${EnvType}-webserver1.local
+  #    ResourceRecords:
+  #      - !GetAtt WebServer1.PrivateIp
+  #    TTL: 60
+  #    Type: A
+  #
+  #WebServer2RecordSet:
+  #  Type: "AWS::Route53::RecordSet"
+  #  # DeletionPolicy: Retain
+  #  Properties:
+  #    Comment: !Sub ${EnvName}-${EnvType}
+  #    HostedZoneId: !FindInMap [ !Ref EnvType, HostedZoneID, local ]
+  #    Name: !Sub ${EnvName}-${EnvType}-webserver2.local
+  #    ResourceRecords:
+  #      - !GetAtt WebServer2.PrivateIp
+  #    TTL: 60
+  #    Type: A
+
+Outputs:
+  VPCID:
+    Value: !Ref VPC
+    Export:
+      Name: !Sub ${AWS::StackName}-${EnvType}-VPCID
+  Frontend1SubnetID:
+    Value: !Ref Frontend1
+    Export:
+      Name: !Sub ${AWS::StackName}-${EnvType}-Frontend1SubnetID
+  Frontend2SubnetID:
+    Value: !Ref Frontend2
+    Export:
+      Name: !Sub ${AWS::StackName}-${EnvType}-Frontend2SubnetID
+  Application1SubnetID:
+    Value: !Ref Application1
+    Export:
+      Name: !Sub ${AWS::StackName}-${EnvType}-Application1SubnetID
+  Application2SubnetID:
+    Value: !Ref Application2
+    Export:
+      Name: !Sub ${AWS::StackName}-${EnvType}-Application2SubnetID
+  Datastore1SubnetID:
+    Value: !Ref Datastore1
+    Export:
+      Name: !Sub ${AWS::StackName}-${EnvType}-Datastore1SubnetID
+  Datastore2SubnetID:
+    Value: !Ref Datastore2
+    Export:
+      Name: !Sub ${AWS::StackName}-${EnvType}-Datastore2SubnetID
+  Web1EC2InstanceID:
+    Value: !Ref WebServer1
+    Export:
+      Name: !Sub ${AWS::StackName}-${EnvType}-Web1EC2InstanceID
+  Web1EIP:
+    Value: !Ref ElasticIPWebServer1
+    Export:
+      Name: !Sub ${AWS::StackName}-${EnvType}-Web1EIP
+  Web2EC2InstanceID:
+    Value: !Ref WebServer2
+    Export:
+      Name: !Sub ${AWS::StackName}-${EnvType}-Web2EC2InstanceID
+  Web2EIP:
+    Value: !Ref ElasticIPWebServer2
+    Export:
+      Name: !Sub ${AWS::StackName}-${EnvType}-Web2EIP
+  DBInstanceIdentifier:
+    Value: !Ref DBInstance
+    Export:
+      Name: !Sub ${AWS::StackName}-${EnvType}-DBinstanceIdentifier
+  DBInstanceEndpoint:
+    Value: !GetAtt DBInstance.Endpoint.Address
+    Export:
+      Name: !Sub ${AWS::StackName}-${EnvType}-DBInstanceEndpoint
+  LoadBalancerARN:
+    Value: !Ref LoadBalancer
+    Export:
+      Name: !Sub ${AWS::StackName}-${EnvType}-LoadBalancerARN
+  ContentsS3BucketWebsiteURL:
+    Value: !GetAtt ContentsS3Bucket.WebsiteURL
+    Export:
+      Name: !Sub ${AWS::StackName}-${EnvType}-ContentsS3BucketWebsiteURL
+  CloudFrontLogsS3BucketArn:
+    Value: !GetAtt CloudFrontLogsS3Bucket.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-${EnvType}-CloudFrontLogsS3BucketArn
+  ELBLogsS3BucketArn:
+    Value: !GetAtt ELBLogsS3Bucket.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-${EnvType}-ELBLogsS3BucketArn
+  S3WebsitehostingLogsS3BucketArn:
+    Value: !GetAtt S3WebsitehostingLogsS3Bucket.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-${EnvType}-S3WebsitehostingLogsS3BucketArn
+  EC2LogsS3BucketArn:
+    Value: !GetAtt EC2LogsS3Bucket.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-${EnvType}-EC2LogsS3BucketArn

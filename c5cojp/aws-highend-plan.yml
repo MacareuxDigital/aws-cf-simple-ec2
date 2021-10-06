@@ -113,21 +113,14 @@ Parameters:
 
   # EC2 Instances
   AMIID:
-    Description: AMI ID (ami-06cd52961ce9f0d85 for Amazon Linux, ami-0f310fced6141e627 for Amazon Linux 2)
-    Default: ami-0f310fced6141e627
+    Description: Amazon Linux 2 AMI ID (ami-02892a4ea9bfa2192 for Intel, ami-09c4848c1c6c4b09b for ARM)
+    Default: ami-02892a4ea9bfa2192
     Type: String
   EC2InstanceType:
-    Description: EC2 Instance type
+    Description: EC2 Instance type. WARNING g family types are for ARM AMI only. 
     Type: String
     Default: m5.large
     AllowedValues: 
-      - t2.nano
-      - t2.micro
-      - t2.small
-      - t2.medium
-      - t2.large
-      - t2.xlarge
-      - t2.2xlarge
       - t3.nano
       - t3.micro
       - t3.small
@@ -184,11 +177,6 @@ Parameters:
       - m5dn.12xlarge
       - m5dn.16xlarge
       - m5dn.24xlarge
-      - m4.xlarge
-      - m4.2xlarge
-      - m4.4xlarge
-      - m4.10xlarge
-      - m4.16xlarge
       - c5.large
       - c5.xlarge
       - c5.2xlarge
@@ -241,6 +229,21 @@ Parameters:
       - i3en.8xlarge
       - i3en.16xlarge
       - i3en.metal
+      - t4g.nano
+      - t4g.micro
+      - t4g.small
+      - t4g.medium
+      - t4g.large
+      - t4g.xlarge
+      - t4g.2xlarge
+      - c6j.medium
+      - c6g.large
+      - c6g.2xlarge
+      - c6g.4xlarge
+      - c6g.8xlarge
+      - c6g.12xlarge
+      - c6g.16xlarge
+      - c6g.metal
   EC2VolumeSize:
     Description: EBS volume size for EC2
     Type: String

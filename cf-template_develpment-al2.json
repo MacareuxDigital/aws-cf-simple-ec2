@@ -173,17 +173,11 @@
     },
     "AWSRegionArch2AMI" : {
       "us-east-1"        : {"PV64" : "NOT_SUPPORTED", "HVM64" : "ami-033b95fb8079dc481", "HVMG2" : "ami-0f7691f59fd7c47af"},
-      "us-east-2"        : {"PV64" : "NOT_SUPPORTED", "HVM64" : "ami-0b614a5d911900a9b", "HVMG2" : "ami-0a1c7c7935530ecbf"},
       "us-west-1"        : {"PV64" : "NOT_SUPPORTED", "HVM64" : "ami-0573b70afecda915d", "HVMG2" : "ami-0718e47b155c6ea59"},
       "us-west-2"        : {"PV64" : "NOT_SUPPORTED", "HVM64" : "ami-0341aeea105412b57", "HVMG2" : "ami-021e15f46d293ec60"},
       "ap-northeast-3"   : {"PV64" : "NOT_SUPPORTED", "HVM64" : "ami-02b68bb8f8e0dee83", "HVMG2" : "NOT_SUPPORTED"},
-      "ap-northeast-2"   : {"PV64" : "NOT_SUPPORTED", "HVM64" : "ami-014009fa4a1467d53", "HVMG2" : "ami-00632d95bb5b7136d"},
       "ap-southeast-1"   : {"PV64" : "NOT_SUPPORTED", "HVM64" : "ami-02a45d709a415958a", "HVMG2" : "ami-02ba5140a4539f3fb"},
       "ap-northeast-1"   : {"PV64" : "NOT_SUPPORTED", "HVM64" : "ami-08a8688fb7eacb171", "HVMG2" : "ami-050a677a0dbb257ab"},
-      "eu-central-1"     : {"PV64" : "NOT_SUPPORTED", "HVM64" : "ami-0eb7496c2e0403237", "HVMG2" : "ami-03b69ecf83b930995"},
-      "eu-west-1"        : {"PV64" : "NOT_SUPPORTED", "HVM64" : "ami-0bf84c42e04519c85", "HVMG2" : "ami-07e30a3659a490be7"},
-      "eu-west-2"        : {"PV64" : "NOT_SUPPORTED", "HVM64" : "ami-0dd555eb7eb3b7c82", "HVMG2" : "ami-0202dfa0c3dc6cd6c"},
-      "eu-west-3"        : {"PV64" : "NOT_SUPPORTED", "HVM64" : "ami-08cfb7b19d5cd546d", "HVMG2" : "ami-068cfb6bae12b1e85"},
     }
   },
 
@@ -193,7 +187,7 @@
       "Type" : "AWS::Route53::RecordSet",
       "Properties" : {
         "HostedZoneName" : { "Ref" : "DomainName"},
-        "Comment" : "concrete5japan develpment domain.",
+        "Comment" : "Macareux Digital develpment domain.",
         "Name" :  { "Fn::Join" : [ ".", [ { "Ref": "SubDomainName" }, { "Ref": "DomainName"} ] ] },
         "Type" : "A",
         "TTL" : "300",

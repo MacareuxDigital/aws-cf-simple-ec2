@@ -287,7 +287,6 @@
               "VolumeType"  :  "gp3",
               "VolumeSize"  :  { "Ref" : "EC2EBSVolume" },
               "Iops" : "3000",
-              "Throughput" : "125",
               "DeleteOnTermination": true
             }
         }],

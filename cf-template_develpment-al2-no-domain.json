@@ -262,6 +262,7 @@
               "DeleteOnTermination": true
             }
         }],
+        "EbsOptimized" : true,
         "KeyName" : { "Ref" : "SSHKeyName" },
         "ImageId" : { "Fn::FindInMap" : [ "AWSRegionArch2AMI", { "Ref" : "AWS::Region" },
                           { "Fn::FindInMap" : [ "AWSInstanceType2Arch", { "Ref" : "InstanceType" }, "Arch" ] } ] }
